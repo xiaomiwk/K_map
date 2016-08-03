@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+    <title>PGIS API自定义地图</title>
+
+    <style type="text/css">
+        v\:*
+        {
+            BEHAVIOR: url(#default#VML);
+        }
+
+        html, body
+        {
+            margin: 0;
+            padding: 0;
+        }
+
+        .iw_poi_title
+        {
+            color: #CC5522;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            padding-right: 13px;
+            white-space: nowrap;
+        }
+
+        .iw_poi_content
+        {
+            font: 12px arial,sans-serif;
+            overflow: visible;
+            padding-top: 4px;
+            white-space: -moz-pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    <!--    <script type="text/javascript" src="http://10.118.2.230:7001/PGIS_S_TileMap/js/EzMapAPI.js"></script>-->
+    <script type="text/javascript" src="http://10.118.2.232:7001/PGIS_S_TileMap/js/EzMapAPI_AF_merg.js"></script>
+    <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+</head>
+
+<body>
+    <!--百度地图容器-->
+    <div style="border: #ccc solid 1px;" id="dituContent"></div>
+    <input type="text" name="dataInputx" style="display: none;" >
+    <input type="text" name="dataInputy" style="display: none;" >
+    <input id="do触发事件" type="button" value="事件名称" style="display: none;" />
+    <input id="in事件参数" type="text" value="事件参数" style="display: none;" />
+
+</body>
+<script type="text/javascript">
+    //全局变量        
+    var _区域集合 = new Array();  //成员是{ Overlays对象 }
+    var _区域选择方法 = "不可用";
+    var _绘图点集合 = new Array();  //成员是{ Point对象 }
+
+    function 初始化地图(__中心点经度, __中心点纬度) {
+        createMap(__中心点经度, __中心点纬度);//创建地图
+        addMapControl();//向地图添加控件
+    }
+
+    function 选择点(e) {
+        if (_区域选择方法 == "不可用") {
+            return;
+        }
+        //debugger;
+        var __point = new Point(e.split(',')[0], e.split(',')[1]);
+        if (_区域选择方法 == "长方形，点击：起点（左上点） - 终点（右下点）") {
+            if (_绘图点集合.length == 0) {
+                _绘图点集合.push(__point);
+            } else {
+                var __pStart = _绘图点集合[0];
+                var __pEnd = __point;
+                var __参数 = '{\"左上角\":' + '{\"经度\":' + __pStart.x + ',\"纬度\":' + __pStart.y + '},'
+                    + '\"右下角\":' + '{\"经度\":' + __pEnd.x + ',\"纬度\":' + __pEnd.y + '}}';
+                //var __polygon = new Polygon(__pStart.x + ',' + __pStart.y + ',' + __pEnd.x + ',' + __pStart.y + ',' + __pEnd.x + ',' + __pEnd.y + ',' + __pStart.x + ',' + __pEnd.y, "blue", 6, 0.5, "blue");
+                //map.addOverlay(__polygon);
+                var __Points = __pStart.x + ',' + __pStart.y + ',' + __pEnd.x + ',' + __pEnd.y;
+                var __Rectangle = new Rectangle(__Points, "blue", 2, 0.3, "blue");
+                map.addOverlay(__Rectangle);
+
+                _区域集合.push(__Rectangle);
+                执行客户端事件("选择长方形区域", __参数);
+                _绘图点集合.splice(0, _绘图点集合.length);
+            }
+            map.changeDragMode('drawPoint', null, null, 选择点);
+            return;
+        }
+        if (_区域选择方法 == "圆形，点击：起点（圆心） - 终点（半径另一端）") {
+            if (_绘图点集合.length == 0) {
+                _绘图点集合.push(__point);
+                map.changeDragMode('drawPoint', null, null, 选择点);
+            } else {
+                var __pStart = _绘图点集合[0];
+                var __pEnd = __point;
+                var __半径 = GetDistance(__pStart.x, __pStart.y, __pEnd.x, __pEnd.y);
+                var __参数 = '{\"圆心\":' + '{\"经度\":' + __pStart.x + ',\"纬度\":' + __pStart.y + '},'
+                    + '\"半径\":' + __半径 + '}';
+                var __半径 = map.getDegree(__pStart, __半径);
+                var __circle = new Circle(__pStart.x + ',' + __pStart.y + ',' + __半径, "blue", 2, 0.3, "blue");
+                map.addOverlay(__circle);
+                _区域集合.push(__circle);
+                执行客户端事件("选择圆形区域", __参数);
+                _绘图点集合.splice(0, _绘图点集合.length);
+            }
+            map.changeDragMode('drawPoint', null, null, 选择点);
+            return;
+        }
+        if (_区域选择方法 == "圆形，点击：点（圆心），半径1公里") {
+            var __pStart = __point;
+            var __半径 = 1000;
+            var __参数 = '{\"圆心\":' + '{\"经度\":' + __pStart.x + ',\"纬度\":' + __pStart.y + '},'
+                + '\"半径\":' + __半径 + '}';
+            var __半径 = map.getDegree(__pStart, __半径);
+            var __circle = new Circle(__pStart.x + ',' + __pStart.y + ',' + __半径, "blue", 2, 0.3, "blue");
+            map.addOverlay(__circle);
+            _区域集合.push(__circle);
+            执行客户端事件("选择圆形区域", __参数);
+            map.changeDragMode('drawPoint', null, null, 选择点);
+            return;
+        }
+    }
+
+    /// 两点距离
+    /// </summary>
+    /// <param name="lng1">经度1</param>
+    /// <param name="lat1">纬度1</param>
+    /// <param name="lng2">经度2</param>
+    /// <param name="lat2">纬度2</param>
+    /// <returns>距离:米</returns>
+    /// <Author>lc</Author>
+    /// <FinishT>2009-12-30</FinishT>
+    function GetDistance(lng1, lat1, lng2, lat2) {
+        var latRadians1 = lat1 * (Math.PI / 180);
+        var latRadians2 = lat2 * (Math.PI / 180);
+        var latRadians = latRadians1 - latRadians2;
+        var lngRadians = lng1 * (Math.PI / 180) - lng2 * (Math.PI / 180);
+        var f = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(latRadians / 2), 2) + Math.cos(latRadians1) * Math.cos(latRadians2) * Math.pow(Math.sin(lngRadians / 2), 2)));
+        return f * 6378137;
+    }
+
+    function 设置地图大小(__宽, __高) {
+        document.getElementById("dituContent").style.width = __宽;
+        document.getElementById("dituContent").style.height = __高;
+    }
+
+    //创建地图函数：
+    function createMap(__中心点经度, __中心点纬度) {
+        var map = new EzMap(document.getElementById("dituContent"));//在地图容器中创建一个地图
+        var point = new Point(__中心点经度, __中心点纬度);//定义一个中心点坐标
+        map.centerAndZoom(point, 12);//设定地图的中心点和坐标并将地图显示在地图容器中
+        window.map = map;//将map变量存储在全局
+    }
+
+    //向地图添加控件：
+    function addMapControl() {
+        // 显示地图左侧比例尺控制控件 
+        map.showMapControl();
+        // 显示比例尺信息于地图的右下角
+        map.showMapScale();
+
+        // 显示地图右上角地图服务按钮 
+        map.showMapServer();
+
+        // 添加鹰眼 
+        var uOverview = new OverView();//  构造一个鹰眼对象 
+        uOverview.width = 200;//  设置鹰眼视窗的宽度 
+        uOverview.height = 200;// 设置鹰眼视窗的高度 
+        uOverview.minLevel = 5;// 设置鹰眼视窗中最小显示地图级别 
+        uOverview.maxLevel = 12;//  设置鹰眼视窗中最大显示地图级别 
+        map.addOverView(uOverview);             //在当前地图中增加一个鹰眼 
+    }
+
+    function 执行客户端事件(__事件名称, __事件参数) {
+        document.getElementById("do触发事件").value = __事件名称;
+        document.getElementById("in事件参数").value = __事件参数;
+        document.getElementById("do触发事件").click();
+    }
+
+    function 设置区域选择方法(parameters) {
+        //debugger;
+        if (parameters != _区域选择方法 && _绘图点集合.length > 0) {
+            _绘图点集合.splice(0, _绘图点集合.length);
+        }
+        _区域选择方法 = parameters;
+        if (_区域选择方法 == "不可用") {
+            map.changeDragMode('pan');
+            return;
+        }
+        map.changeDragMode('drawPoint', null, null, 选择点);
+    }
+
+    function 删除上一个区域() {
+        var __上一个区域 = _区域集合.pop();
+        map.removeOverlay(__上一个区域);
+    }
+
+    function 删除所有区域() {
+        map.clearOverlays();
+    }
+</script>
+</html>

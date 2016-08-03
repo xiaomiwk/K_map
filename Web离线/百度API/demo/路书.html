@@ -1,0 +1,105 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>路书</title>
+    <style type="text/css">
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+        
+        #map_canvas {
+            width: 100%;
+            height: 500px;
+        }
+        
+        #result {
+            width: 100%
+        }
+    </style>
+    <script type="text/javascript" src="../baidujs/baidu.js"></script>
+    <script type="text/javascript" src="../baidujs/modules.js"></script>
+    <script type="text/javascript" src="../baidujs/LuShu.js"></script>
+</head>
+
+<body>
+    <div id="map_canvas"></div>
+    <div id="result"></div>
+    <button id="run">开始</button>
+    <button id="stop">停止</button>
+    <button id="pause">暂停</button>
+    <button id="hide">隐藏信息窗口</button>
+    <button id="show">展示信息窗口</button>
+    <script>
+        var map = new BMap.Map('map_canvas');
+        map.enableScrollWheelZoom();
+        map.centerAndZoom(new BMap.Point(116.404, 39.915), 13);
+        var lushu;
+        
+        var arrPois = []; //通过驾车实例，获得一系列点的数组
+        for (var j = 0; j < 100; j++) {
+            var pt = new BMap.Point(116.404, 39.915 + j * 0.001);
+            arrPois.push(pt);
+        }
+        map.addOverlay(new BMap.Polyline(arrPois, {
+            strokeColor: '#111'
+        }));
+        map.setViewport(arrPois);
+
+        lushu = new BMapLib.LuShu(map, arrPois, {
+            defaultContent: "", //"从天安门到百度大厦"
+            autoView: true, //是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
+            icon: new BMap.Icon('../baiduimages/car.png', new BMap.Size(52, 26), {
+                anchor: new BMap.Size(27, 13)
+            }),
+            speed: 4500,
+            enableRotation: true, //是否设置marker随着道路的走向进行旋转
+            landmarkPois: [
+                {
+                    lng: 116.314782,
+                    lat: 39.913508,
+                    html: '加油站',
+                    pauseTime: 2
+                    },
+                {
+                    lng: 116.315391,
+                    lat: 39.964429,
+                    html: '高速公路收费<div><img src="../baiduimages/m2.png"/></div>',
+                    pauseTime: 3
+                    },
+                {
+                    lng: 116.381476,
+                    lat: 39.974073,
+                    html: '肯德基早餐<div><img src="../baiduimages/m2.png"/></div>',
+                    pauseTime: 2
+                    }
+    ]
+        });
+        //绑定事件
+        $("run").onclick = function () {
+            lushu.start();
+        }
+        $("stop").onclick = function () {
+            lushu.stop();
+        }
+        $("pause").onclick = function () {
+            lushu.pause();
+        }
+        $("hide").onclick = function () {
+            lushu.hideInfoWindow();
+        }
+        $("show").onclick = function () {
+            lushu.showInfoWindow();
+        }
+
+        function $(element) {
+            return document.getElementById(element);
+        }
+    </script>
+</body>
+
+</html>

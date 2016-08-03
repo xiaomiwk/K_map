@@ -1,0 +1,26 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+		body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:"微软雅黑";}
+	</style>
+    <script type="text/javascript" src="../baidujs/baidu.js"></script>
+    <script type="text/javascript" src="../baidujs/modules.js"></script>
+	<script type="text/javascript" src="../baidujs/DistanceTool.js"></script>
+	<title>鼠标测距</title>
+</head>
+<body>
+	<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+	// 百度地图API功能
+	var map = new BMap.Map("allmap");           
+	map.centerAndZoom(new BMap.Point(116.404, 39.915), 13);                  
+	var myDis = new BMapLib.DistanceTool(map);
+	map.addEventListener("tilesloaded",function(){
+        myDis.open();  //开启鼠标测距
+		//myDis.close();  //关闭鼠标测距大
+	});
+</script>

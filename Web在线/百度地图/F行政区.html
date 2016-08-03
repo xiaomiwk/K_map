@@ -1,0 +1,143 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>获取地区轮廓线</title>
+    <!--引用百度地图API-->
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .iw_poi_title {
+            color: #CC5522;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            padding-right: 13px;
+            white-space: nowrap;
+        }
+
+        .iw_poi_content {
+            font: 12px arial,sans-serif;
+            overflow: visible;
+            padding-top: 4px;
+            white-space: -moz-pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?key=&v=1.4"></script>
+    <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+    <script type="text/javascript">
+        //var map = new BMap.Map("dituContent");
+        //map.centerAndZoom(new BMap.Point(116.403765, 39.914850), 5);
+        //map.addControl(new BMap.NavigationControl({ type: BMAP_NAVIGATION_CONTROL_SMALL }));
+        //map.enableScrollWheelZoom();
+
+
+        function 绘制边界(地址) {
+            //alert("绘制边界:" + 地址);
+            var bdary = new BMap.Boundary();
+            bdary.get(地址, function (rs) {       //获取行政区域
+                map.clearOverlays();        //清除地图覆盖物
+                var count = rs.boundaries.length; //行政区域的点有多少个
+                //alert(地址 + " 的边界点数量：" + count);
+                for (var i = 0; i < count; i++) {
+                    var ply = new BMap.Polygon(rs.boundaries[i], { strokeWeight: 2, strokeColor: "#ff0000" }); //建立多边形覆盖物
+                    map.addOverlay(ply);  //添加覆盖物
+                    map.setViewport(ply.getPath());    //调整视野
+                }
+            });
+        }
+
+        function 导出边界(地址) {
+            //alert("导出边界:" + 地址);
+            var bdary = new BMap.Boundary();
+            bdary.get(地址, function (rs) {       //获取行政区域
+                var count = rs.boundaries.length; //行政区域的点有多少个
+                //alert(地址 + " 的边界点数量：" + count);
+                if (count == 0) {
+                    执行客户端事件("导出边界", 地址 + ":" + "0,0");
+                    return;
+                }
+                var __temp = "";
+                for (var i = 0; i < count; i++) {
+                    if (i == 0) {
+                        __temp += rs.boundaries[i];
+                    } else {
+                        __temp += "||" + rs.boundaries[i];
+                    }
+                }
+                执行客户端事件("导出边界", 地址 + ":" + __temp);
+            });
+        }
+
+        function 查询位置(地址) {
+            var myGeo = new BMap.Geocoder();
+            myGeo.getPoint(地址, function (point) {
+                if (point) {
+                    执行客户端事件("查询位置", 地址 + ":" + point.lng+","+point.lat);
+                    //map.centerAndZoom(point, 16);
+                    //map.addOverlay(new BMap.Marker(point));
+                } else {
+                    执行客户端事件("查询位置", 地址 + ":" + "0,0");
+                }
+            }, "北京市");
+        }
+
+        function 初始化地图(__城市) {
+            createMap(__城市);//创建地图
+            setMapEvent();//设置地图事件
+            addMapControl();//向地图添加控件
+        }
+
+        //创建地图函数：
+        function createMap(__城市) {
+            var map = new BMap.Map("dituContent");//在百度地图容器中创建一个地图
+            //var point = new BMap.Point(城市);//定义一个中心点坐标
+            map.centerAndZoom(__城市, 12);//设定地图的中心点和坐标并将地图显示在地图容器中
+            window.map = map;//将map变量存储在全局
+        }
+
+        //地图事件设置函数：
+        function setMapEvent() {
+            map.enableDragging();//启用地图拖拽事件，默认启用(可不写)
+            map.enableScrollWheelZoom();//启用地图滚轮放大缩小
+            map.enableDoubleClickZoom();//启用鼠标双击放大，默认启用(可不写)
+            map.enableKeyboard();//启用键盘上下左右键移动地图
+        }
+
+        //向地图添加控件：
+        function addMapControl() {
+            //向地图中添加缩放控件
+            var ctrl_nav = new BMap.NavigationControl({ anchor: BMAP_ANCHOR_TOP_LEFT, type: BMAP_NAVIGATION_CONTROL_LARGE });
+            map.addControl(ctrl_nav);
+            //向地图中添加缩略图控件
+            var ctrl_ove = new BMap.OverviewMapControl({ anchor: BMAP_ANCHOR_BOTTOM_RIGHT, isOpen: true });
+            map.addControl(ctrl_ove);
+            //向地图中添加比例尺控件
+            var ctrl_sca = new BMap.ScaleControl({ anchor: BMAP_ANCHOR_BOTTOM_LEFT });
+            map.addControl(ctrl_sca);
+        }
+
+        function 设置地图大小(__宽, __高) {
+            document.getElementById("dituContent").style.width = __宽;
+            document.getElementById("dituContent").style.height = __高;
+        }
+
+        function 执行客户端事件(__事件名称, __事件参数) {
+            document.getElementById("do触发事件").value = __事件名称;
+            document.getElementById("in事件参数").value = __事件参数;
+            document.getElementById("do触发事件").click();
+        }
+
+    </script>
+
+</head>
+<body>
+    <div id="dituContent"></div>
+    <input id="do触发事件" type="button" value="事件名称" style="display: none;" />
+    <input id="in事件参数" type="text" value="事件参数" style="display: none;" />
+</body>
+</html>

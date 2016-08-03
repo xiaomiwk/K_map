@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>无标题文档</title>
+<style>
+	#map_canvas{
+		background-color: #CCC;
+		width:100%;
+		height: 95%;
+  		position: absolute;
+  		bottom:0px;
+  		left:0;
+  		right:0;
+  		top:20;
+  		margin: 0;
+  		padding: 0;
+	}
+</style>
+
+<script type="text/javascript" src="mapapi.js"></script>
+<script type="text/javascript">
+var map;
+var myCenter = new google.maps.LatLng(22.786607,100.977316);//普洱  101.66290,24.64769
+function CoordMapType() {
+}
+CoordMapType.prototype.tileSize = new google.maps.Size(256,256);
+CoordMapType.prototype.maxZoom = 19;
+
+CoordMapType.prototype.getTile = function(coord, zoom, ownerDocument) {
+  var div = ownerDocument.createElement('div');
+  div.innerHTML = '<img name="" src="./tiles/' + zoom + '/gs_'  + coord.x +'_'+ coord.y + '_' + zoom + '.jpg"  onerror="errpic(this)"/>';
+  div.style.width = this.tileSize.width + 'px';
+  div.style.height = this.tileSize.height + 'px';
+  div.style.fontSize = '10';
+  div.style.borderStyle = 'solid';
+  div.style.borderWidth = '1px';
+  div.style.borderColor = '#AAAAAA';
+  return div;
+};
+//实现更换图片功能
+var web_url="./";
+function errpic(thepic){
+	thepic.src=web_url+"undefined.jpg";
+}
+
+CoordMapType.prototype.name = "Tile #s";
+CoordMapType.prototype.alt = "Tile Coordinate Map Type";
+
+var coordinateMapType = new CoordMapType();
+
+function initialize() {
+  var mapOptions = {
+    zoom: 9,
+    center: myCenter,
+	mapTypeId: "coordinate"
+  };
+  map = new google.maps.Map(document.getElementById("map_canvas"),
+      mapOptions);
+      
+   map.mapTypes.set('coordinate',coordinateMapType);
+}
+</script>
+
+
+</head>
+
+<body onLoad="initialize()">
+<div>
+</div>
+<div id="map_canvas"></div>
+</body>
+</html>

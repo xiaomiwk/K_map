@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html>  
+    <head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=yes" />
+        <title>Offline Maps Demo - by lyklinse</title>
+        <script type="text/javascript" src="mapfiles/mapapi.js"></script>
+    <script>
+	   var map;
+	   
+	   function LocalMapType() {}
+  
+        LocalMapType.prototype.tileSize = new google.maps.Size(256, 256);
+        LocalMapType.prototype.maxZoom = 21;   //地图显示最大级别
+        LocalMapType.prototype.minZoom = 3;    //地图显示最小级别
+        LocalMapType.prototype.name = "本地地图";
+        LocalMapType.prototype.alt = "显示本地地图数据";
+        LocalMapType.prototype.getTile = function(coord, zoom, ownerDocument) {
+            var img = ownerDocument.createElement("img");
+            img.style.width = this.tileSize.width + "px";
+            img.style.height = this.tileSize.height + "px";
+            //地图存放路径
+            //谷歌矢量图 maptile/googlemaps/roadmap
+            //谷歌影像图 maptile/googlemaps/roadmap
+            //MapABC地图 maptile/mapabc/
+			//strURL = "maptile/googlemaps/roadmap/";
+
+			mapPicDir = "maptile/googlemaps/roadmap/";
+			var curSize = Math.pow(2,zoom);
+            strURL = mapPicDir + zoom + "/" + (coord.x % curSize )+ "/" + (coord.y % curSize)+ ".PNG";
+			//strURL = "E:/地图文件/谷歌地图中国0-12级googlemaps/googlemaps/roadmap/" + zoom + "/" + (coord.x % curSize )+ "/" + (coord.y % curSize)+ ".PNG";
+
+            img.src = strURL;
+            return img;
+        };
+  
+      var localMapType = new LocalMapType();
+	  
+      function initialize() {
+        var myLatlng = new google.maps.LatLng(30.587, 114.312);
+        var mapOptions = {
+          zoom: 5,
+          center: myLatlng,
+          mapTypeControlOptions: {
+			mapTypeIds: [
+			google.maps.MapTypeId.ROADMAP,
+			google.maps.MapTypeId.HYBRID,
+			google.maps.MapTypeId.SATELLITE,
+			google.maps.MapTypeId.TERRAIN,
+			'localMap' ]  //定义地图类型
+		  },
+		  panControl: true,
+		  zoomControl: true,
+		  mapTypeControl: true,
+		  scaleControl: true,
+		  streetViewControl: true,
+		  overviewMapControl: true
+        }
+
+
+        map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+		map.mapTypes.set('localMap', localMapType);   //绑定本地地图类型
+        map.setMapTypeId('localMap');    //指定显示本地地图
+		map.setOptions({draggable: true});
+		
+		var infowindow = new google.maps.InfoWindow({
+            content:  '<img src="images/flowers.jpg"><br/><center>Wuhan</center>'
+        });
+
+        var marker = new google.maps.Marker({
+            position: myLatlng,
+            map: map,
+            title: ''
+        });
+        google.maps.event.addListener(marker, 'click', function() {
+          infowindow.open(map,marker);
+        });
+      }
+
+	</script>
+    </head>
+    
+    <body onload="initialize()">
+		<div id="map_canvas" style="left:0;top:0;width:100%;height:100%;position:absolute;">
+					
+		</div>
+    </body>
+
+</html>

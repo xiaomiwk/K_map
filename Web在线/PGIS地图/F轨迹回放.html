@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+    <title>PGIS API自定义地图</title>
+
+    <style type="text/css">
+        v\:*
+        {
+            BEHAVIOR: url(#default#VML);
+        }
+
+        html, body
+        {
+            margin: 0;
+            padding: 0;
+        }
+
+        .iw_poi_title
+        {
+            color: #CC5522;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            padding-right: 13px;
+            white-space: nowrap;
+        }
+
+        .iw_poi_content
+        {
+            font: 12px arial,sans-serif;
+            overflow: visible;
+            padding-top: 4px;
+            white-space: -moz-pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    <!--    <script type="text/javascript" src="http://10.118.2.230:7001/PGIS_S_TileMap/js/EzMapAPI.js"></script>-->
+    <script type="text/javascript" src="http://10.118.2.232:7001/PGIS_S_TileMap/js/EzMapAPI_AF_merg.js"></script>
+    <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+</head>
+
+<body>
+    <!--地图容器-->
+    <div style="border: #ccc solid 1px;" id="dituContent"></div>
+    <input id="do触发事件" type="button" value="事件名称" style="display: none;" />
+    <input id="in事件参数" type="text" value="事件参数" style="display: none;" />
+
+</body>
+<script type="text/javascript">
+    //全局变量        
+    var _标记集合 = new Array();  //成员是{ 标记id, 标记json, Marker对象, Circle对象 }
+    var _显示模式 = "手动";
+    var _中心序号 = -1;
+
+    function 初始化地图(__中心点经度, __中心点纬度) {
+        createMap(__中心点经度, __中心点纬度);//创建地图
+        addMapControl();//向地图添加控件
+    }
+
+    function 添加标记(__json字符串) {
+        var json = $.parseJSON(__json字符串);   //jquery的.parseJSON（）方法
+        var pIcon = new Icon();
+        pIcon.image = createIcon(json);
+        pIcon.height = 20;
+        pIcon.width = 20;
+        var __title = new Title(json.名称, 12, 7, "宋体", "WHITE", "green", "WHITE", 1);
+        添加标记1(json, __title, pIcon);
+    }
+
+    function 添加标记1(json, __title, pIcon) {
+        var point = new Point(json.经度, json.纬度);
+        var marker = new Marker(point, pIcon, __title);
+        map.addOverlay(marker);
+
+        (function () {
+            var _iw = createInfoWindow(json);
+            marker.addListener("click", function () {
+                marker.openInfoWindowHtml(_iw);
+            });
+            if (!!json.打开描述) {
+                marker.openInfoWindowHtml(_iw);
+            }
+        })();
+
+        //添加半径
+        var __误差半径 = map.getDegree(point, json.误差半径);
+        var __circle = new Circle(point.x + ',' + point.y + ',' + __误差半径, "#009ffc", 1, 0.1, "#009ffc");
+        map.addOverlay(__circle);
+
+        //加入缓存
+        _标记集合.push(new Array(json.Id, json, marker, __circle));
+
+        //显示标记
+        if (_显示模式 == "以个体为中心") {
+            if (_中心序号 == json.Id) {
+                map.recenterOrPanToLatLng(point);
+            }
+        } else if (_显示模式 == "概览") {
+            设置显示模式("概览");
+        }
+    }
+
+
+    function 清除所有标记() {
+        map.clearOverlays();
+        _标记集合.splice(0, _标记集合.length);
+    }
+
+    function 删除标记(__标记Id, __服务器端) {
+        if (!__服务器端) {
+            document.getElementById("in事件参数").value = __标记Id;
+            document.getElementById("do触发事件").value = "删除标记";
+            document.getElementById("do触发事件").click();
+            return;
+        }
+        for (var i = 0; i < _标记集合.length; i++) {
+            if (_标记集合[i][0] == __标记Id) {
+                var json = _标记集合[i][1];
+                var marker = _标记集合[i][2];
+                var circle = _标记集合[i][3];
+                map.removeOverlay(marker);
+                map.removeOverlay(circle);
+                _标记集合.splice(i, 1);
+                return;
+            }
+        }
+    }
+
+    function 设置地图大小(__宽, __高) {
+        document.getElementById("dituContent").style.width = __宽;
+        document.getElementById("dituContent").style.height = __高;
+    }
+
+    function 设置显示模式(__显示模式) {
+        _显示模式 = __显示模式;
+        if (_显示模式 == "概览") {
+            var dInMinX = 180;
+            var dInMinY = 90;
+            var dInMaxX = -180;
+            var dInMaxY = -90;
+            for (var i = 0; i < _标记集合.length; i++) {
+                var json = _标记集合[i][1];
+                dInMinX = Math.min(json.经度, dInMinX);
+                dInMinY = Math.min(json.纬度, dInMinY);
+                dInMaxX = Math.max(json.经度, dInMaxX);
+                dInMaxY = Math.max(json.纬度, dInMaxY);
+            }
+            //var __Points = dInMinX + ',' + dInMinY + ',' + dInMaxX + ',' + dInMaxY;
+            //var __Rectangle = new Rectangle(__Points, "#ff00FF", 2, 0.5, "green");
+            //map.addOverlay(__Rectangle);
+            map.centerAtMBR(new MBR(dInMinX, dInMinY, dInMaxX, dInMaxY));
+            var __level = map.getLevelOfMBR(dInMinX, dInMinY, dInMaxX, dInMaxY);
+            map.zoomTo(__level - 1);
+        }
+    }
+
+    function 设置中心序号(__中心序号) {
+        _中心序号 = __中心序号;
+        for (var i = 0; i < _标记集合.length; i++) {
+            if (_标记集合[i][0] == _中心序号) {
+                var json = _标记集合[i][1];
+                var marker = _标记集合[i][2];
+                map.recenterOrPanToLatLng(marker.getPoint());
+                return;
+            }
+        }
+    }
+
+    //创建地图函数：
+    function createMap(__中心点经度, __中心点纬度) {
+        var map = new EzMap(document.getElementById("dituContent"));//在地图容器中创建一个地图
+        var point = new Point(__中心点经度, __中心点纬度);//定义一个中心点坐标
+        map.centerAndZoom(point, 12);//设定地图的中心点和坐标并将地图显示在地图容器中
+        window.map = map;//将map变量存储在全局
+    }
+
+    //向地图添加控件：
+    function addMapControl() {
+        // 显示地图左侧比例尺控制控件 
+        map.showMapControl();
+        // 显示比例尺信息于地图的右下角
+        map.showMapScale();
+
+        // 显示地图右上角地图服务按钮 
+        map.showMapServer();
+
+        // 添加鹰眼 
+        var uOverview = new OverView();//  构造一个鹰眼对象 
+        uOverview.width = 200;//  设置鹰眼视窗的宽度 
+        uOverview.height = 200;// 设置鹰眼视窗的高度 
+        uOverview.minLevel = 5;// 设置鹰眼视窗中最小显示地图级别 
+        uOverview.maxLevel = 12;//  设置鹰眼视窗中最大显示地图级别 
+        map.addOverView(uOverview);             //在当前地图中增加一个鹰眼 
+    }
+
+    //创建InfoWindow
+    function createInfoWindow(json) {
+        var iw =
+            "<b class='iw_poi_title'>" + json.名称 + "</b>"
+                + "<div class='iw_poi_content'>序号：" + json.Id + "</div>"
+                + "<div class='iw_poi_content'>号码：" + json.号码 + "</div>"
+                + "<div class='iw_poi_content'>描述：" + json.描述 + "</div>"
+                //+ "<div class='iw_poi_content'>经度：" + json.经度 + "</div>"
+                //+ "<div class='iw_poi_content'>纬度：" + json.纬度 + "</div>"
+                + "<div class='iw_poi_content'>偏差：精确到" + json.误差半径 + "米</div>"
+                + "<div class='iw_poi_content'>时间：" + json.时间 + "</div>"
+                + "<div style='margin-top:5px'> "
+                + "  <input type='button' value='删除' onclick=\"删除标记('" + json.Id + "')\"/>"
+                + "  <input type='button' value='呼叫'/>"
+                + "  <input type='button' value='发短信'/>"
+                + "</div>";
+        return iw;
+    }
+
+    //创建方向图标
+    function createIcon(json) {
+        return createIcon1(json, "在线");
+    }
+
+    //创建方向图标
+    function createIcon1(json, style) {
+        var image = "images/direction/12";
+        var __方向 = json.方向;
+        if (__方向 > 15 && __方向 <= 345) {
+            var __num = Math.floor((__方向 - 15) / 30 + 1);
+            image = "images/direction/" + __num;
+        }
+        if (style == "在线") {
+            image = image + ".gif";
+        }
+        if (style == "即将离线") {
+            image = image + "-2.png";
+        }
+        if (style == "离线") {
+            image = image + "-3.png";
+        }
+        return image;
+    }
+
+    //画出路径
+    function 画出路径(color, __json字符串) {
+        //alert("画出路径0" + "\ncolor:" + color + "\njson:" + __json字符串);
+        var json = $.parseJSON(__json字符串);   //jquery的.parseJSON（）方法
+        var arr = new Array();
+        //alert("画出路径1");
+        for (var i = 0; i < json.length; i++) {
+            arr.push(new Point(json[i].经度, json[i].纬度));
+        }
+        //alert("画出路径2");
+        var polyline = new Polyline(arr, color, 6, 0.5);
+        map.addOverlay(polyline);
+        //alert("画出路径3");
+    }
+
+    //设置标注样式
+    function 设置标注样式(__Id, style) {
+        for (var i = 0; i < _标记集合.length; i++) {
+            if (_标记集合[i][0] == __Id) {
+                var json = _标记集合[i][1];
+                var marker = _标记集合[i][2];
+                if (style == "即将离线") {
+                    var pIcon = new Icon();
+                    pIcon.image = createIcon1(json, style);
+                    pIcon.height = 20;
+                    pIcon.width = 20;
+                    var __title = new Title(json.名称, 12, 7, "宋体", "WHITE", "red", "WHITE", 1);
+                    添加标记1(json, __title, pIcon);
+                    删除标记(__Id, true);
+                }
+                if (style == "离线") {
+                    var pIcon = new Icon();
+                    pIcon.image = createIcon1(json, style);
+                    pIcon.height = 20;
+                    pIcon.width = 20;
+                    var __title = new Title(json.名称, 12, 7, "宋体", "WHITE", "gray", "WHITE", 1);
+                    添加标记1(json, __title, pIcon);
+                    删除标记(__Id, true);
+                }
+                return;
+            }
+        }
+    }
+</script>
+</html>

@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="jquery-1.9.1.js"></script>
+    <script>
+        //全局变量        
+        function 桌面发起(__文本) {
+            //debugger;
+            document.getElementById('in输入').value = __文本;
+            document.getElementById('do动作').onclick();
+        }
+
+        function 处理JSON数据(__json字符串) {
+            var __json数组 = eval(__json字符串);   //jquery的.parseJSON（）方法
+            for (var i = 0; i < __json数组.length; i++) {
+                var __json = __json数组[i];
+                alert("城市：" + __json.城市 + "；区号: " + __json.区号);
+            }
+        }
+
+        function 执行客户端事件(__事件名称, __事件参数) {
+            document.getElementById("do触发事件").value = __事件名称;
+            document.getElementById("in事件参数").value = __事件参数;
+            document.getElementById("do触发事件").click();
+        }
+    </script>
+</head>
+    <body style="text-align:center; font-family:'Microsoft YaHei UI'; font-size:1.2em">
+        <input id="do触发事件" type="button" value="事件名称" style="display: none;" onclick="alert('WEB发起: 客户端单击按钮事件')" />
+        <input id="in事件参数" type="text" value="事件参数" style="display: none;" />
+        <div style="text-align:left; margin:100px;">
+            <div>桌面与WEB交互：桌面发起</div>
+            <input id="in输入" type="text" value="输入" style="font-family:'Microsoft YaHei UI'; font-size:1em" />
+            <input id="do动作" type="button" value="动作1" onclick="alert('桌面发起: 单击按钮')" style="font-family:'Microsoft YaHei UI'; font-size:0.8em"  />
+        </div>
+
+        <div style="text-align:left; margin:100px;">
+            <div style="font-family:'Microsoft YaHei UI'; font-size:1em" >桌面与WEB交互：WEB发起</div>   
+            <input id="do动作2" type="button" value="动作2" onclick="执行客户端事件('客户端事件名称', '客户端事件参数')" style="font-family:'Microsoft YaHei UI'; font-size:0.8em" />
+        </div>
+    </body>
+</html>

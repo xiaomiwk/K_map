@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+    <meta name="keywords" content="百度地图,百度地图API，百度地图自定义工具，百度地图所见即所得工具" />
+    <meta name="description" content="百度地图API自定义地图，帮助用户在可视化操作下生成百度地图" />
+    <title>百度地图API自定义地图</title>
+
+    <!--引用百度地图API-->
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .iw_poi_title {
+            color: #CC5522;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            padding-right: 13px;
+            white-space: nowrap;
+        }
+
+        .iw_poi_content {
+            font: 12px arial,sans-serif;
+            overflow: visible;
+            padding-top: 4px;
+            white-space: -moz-pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?key=&v=1.4"></script>
+    <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+</head>
+
+<body>
+    <!--百度地图容器--><!--style="border: #ccc solid 1px;"-->
+    <div id="dituContent"></div>
+    <input id="do触发事件" type="button" value="事件名称" style="display: none;" />
+    <input id="in事件参数" type="text" value="事件参数" style="display: none;" />
+
+</body>
+<script type="text/javascript">
+    //全局变量        
+    var _区域集合 = new Array();  //成员是{ Overlays对象 }
+    var _区域选择方法 = "不可用";
+    var _绘图点集合 = new Array();  //成员是{ Point对象 }
+
+    function 初始化地图(__城市) {
+        createMap(__城市);//创建地图
+        setMapEvent();//设置地图事件
+        addMapControl();//向地图添加控件
+
+        map.addEventListener("click", function (e) {
+            if (_区域选择方法 == "不可用") {
+                return;
+            }
+            if (_区域选择方法 == "长方形，点击：起点（左上点） - 终点（右下点）") {
+                if (_绘图点集合.length == 0) {
+                    _绘图点集合.push(e.point);
+                } else {
+                    var __pStart = _绘图点集合[0];
+                    var __pEnd = e.point;
+                    var __参数 = '{\"左上角\":' + '{\"经度\":' + __pStart.lng + ',\"纬度\":' + __pStart.lat + '},'
+                        + '\"右下角\":' + '{\"经度\":' + __pEnd.lng + ',\"纬度\":' + __pEnd.lat + '}}';
+                    var __polygon = new BMap.Polygon([
+                      new BMap.Point(__pStart.lng, __pStart.lat),
+                      new BMap.Point(__pEnd.lng, __pStart.lat),
+                      new BMap.Point(__pEnd.lng, __pEnd.lat),
+                      new BMap.Point(__pStart.lng, __pEnd.lat)
+                    ], { strokeColor: "blue", strokeWeight: 6, strokeOpacity: 0.5 });
+                    map.addOverlay(__polygon);
+                    _区域集合.push(__polygon);
+                    执行客户端事件("选择长方形区域", __参数);
+                    _绘图点集合.splice(0, _绘图点集合.length);
+                }
+                return;
+            }
+            if (_区域选择方法 == "圆形，点击：起点（圆心） - 终点（半径另一端）") {
+                if (_绘图点集合.length == 0) {
+                    _绘图点集合.push(e.point);
+                } else {
+                    var __pStart = _绘图点集合[0];
+                    var __pEnd = e.point;
+                    var __半径 = GetDistance(__pStart.lng, __pStart.lat, __pEnd.lng, __pEnd.lat);
+                    var __参数 = '{\"圆心\":' + '{\"经度\":' + __pStart.lng + ',\"纬度\":' + __pStart.lat + '},'
+                        + '\"半径\":' + __半径 + '}';
+                    var __circle = new BMap.Circle(__pStart, __半径);
+                    map.addOverlay(__circle);
+                    _区域集合.push(__circle);
+                    执行客户端事件("选择圆形区域", __参数);
+                    _绘图点集合.splice(0, _绘图点集合.length);
+                }
+                return;
+            }
+            if (_区域选择方法 == "圆形，点击：点（圆心），半径1公里") {
+                var __pStart = e.point;
+                var __半径 = 1000;
+                var __参数 = '{\"圆心\":' + '{\"经度\":' + __pStart.lng + ',\"纬度\":' + __pStart.lat + '},'
+                    + '\"半径\":' + __半径 + '}';
+                var __circle = new BMap.Circle(__pStart, __半径);
+                map.addOverlay(__circle);
+                _区域集合.push(__circle);
+                执行客户端事件("选择圆形区域", __参数);
+                return;
+            }
+        });
+    }
+
+    /// 两点距离
+    /// </summary>
+    /// <param name="lng1">经度1</param>
+    /// <param name="lat1">纬度1</param>
+    /// <param name="lng2">经度2</param>
+    /// <param name="lat2">纬度2</param>
+    /// <returns>距离:米</returns>
+    /// <Author>lc</Author>
+    /// <FinishT>2009-12-30</FinishT>
+    function GetDistance(lng1, lat1, lng2, lat2) {
+        var latRadians1 = lat1 * (Math.PI / 180);
+        var latRadians2 = lat2 * (Math.PI / 180);
+        var latRadians = latRadians1 - latRadians2;
+        var lngRadians = lng1 * (Math.PI / 180) - lng2 * (Math.PI / 180);
+        var f = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(latRadians / 2), 2) + Math.cos(latRadians1) * Math.cos(latRadians2) * Math.pow(Math.sin(lngRadians / 2), 2)));
+        return f * 6378137;
+    }
+
+    function 设置地图大小(__宽, __高) {
+        document.getElementById("dituContent").style.width = __宽;
+        document.getElementById("dituContent").style.height = __高;
+    }
+
+    //创建地图函数：
+    function createMap(__城市) {
+        var map = new BMap.Map("dituContent");//在百度地图容器中创建一个地图
+        //var point = new BMap.Point(城市);//定义一个中心点坐标
+        map.centerAndZoom(__城市, 12);//设定地图的中心点和坐标并将地图显示在地图容器中
+        window.map = map;//将map变量存储在全局
+    }
+
+    //地图事件设置函数：
+    function setMapEvent() {
+        map.enableDragging();//启用地图拖拽事件，默认启用(可不写)
+        map.enableScrollWheelZoom();//启用地图滚轮放大缩小
+        map.enableDoubleClickZoom();//启用鼠标双击放大，默认启用(可不写)
+        map.enableKeyboard();//启用键盘上下左右键移动地图
+    }
+
+    //向地图添加控件：
+    function addMapControl() {
+        //向地图中添加缩放控件
+        var ctrl_nav = new BMap.NavigationControl({ anchor: BMAP_ANCHOR_TOP_LEFT, type: BMAP_NAVIGATION_CONTROL_LARGE });
+        map.addControl(ctrl_nav);
+        //向地图中添加缩略图控件
+        var ctrl_ove = new BMap.OverviewMapControl({ anchor: BMAP_ANCHOR_BOTTOM_RIGHT, isOpen: true });
+        map.addControl(ctrl_ove);
+        //向地图中添加比例尺控件
+        var ctrl_sca = new BMap.ScaleControl({ anchor: BMAP_ANCHOR_BOTTOM_LEFT });
+        map.addControl(ctrl_sca);
+    }
+
+    function 查询(__关键词) {
+        var options = {
+            onSearchComplete: function (results) {
+                // 判断状态是否正确   
+                if (local.getStatus() == BMAP_STATUS_SUCCESS) {
+                    var s = "[";
+                    for (var i = 0; i < results.getCurrentNumPois() ; i++) {
+                        //s.push(results.getPoi(i).title + ", " + results.getPoi(i).address);
+                        if (s != "[") {
+                            s = s + ",";
+                        }
+                        s = s + "{ \"Title\":\"" + results.getPoi(i).title + "\", \"Address\":\"" + results.getPoi(i).address + "\"}";
+                    }
+                    s = s + "]";
+                    执行客户端事件("查询成功", s);
+                } else {
+                    执行客户端事件("查询失败", "");
+                }
+            },
+            renderOptions: { map: map }
+        };
+        var local = new BMap.LocalSearch(map, options);
+        local.search(__关键词);
+    }
+
+    function 执行客户端事件(__事件名称, __事件参数) {
+        document.getElementById("do触发事件").value = __事件名称;
+        document.getElementById("in事件参数").value = __事件参数;
+        document.getElementById("do触发事件").click();
+    }
+
+    function 设置区域选择方法(parameters) {
+        if (parameters != _区域选择方法 && _绘图点集合.length > 0) {
+            _绘图点集合.splice(0, _绘图点集合.length);
+        }
+        _区域选择方法 = parameters;
+        if (_区域选择方法 == "不可用") {
+            map.setDefaultCursor("pointer");
+            return;
+        }
+        map.setDefaultCursor("crosshair");
+    }
+
+    function 删除上一个区域() {
+        var __上一个区域 = _区域集合.pop();
+        map.removeOverlay(__上一个区域);
+    }
+
+    function 删除所有区域() {
+        map.clearOverlays();
+    }
+
+    //  //单击获取经纬度
+    //  map.addEventListener("click", function (e) {
+    //      alert(e.point.lng + "," + e.point.lat);
+    //  });
+
+    //  //绘制长方形
+    //  var polygon = new BMap.Polygon([
+    //    new BMap.Point(pStart.lng, pStart.lat),
+    //    new BMap.Point(pEnd.lng, pStart.lat),
+    //    new BMap.Point(pEnd.lng, pEnd.lat),
+    //    new BMap.Point(pStart.lng, pEnd.lat)
+    //  ], { strokeColor: "blue", strokeWeight: 6, strokeOpacity: 0.5 });
+    //  map.addOverlay(polygon);
+
+    //  //绘制圆形
+    //  var point = new BMap.Point(116.404, 39.915);
+    //  map.centerAndZoom(point, 16);
+    //  var circle = new BMap.Circle(point, 500);
+    //  map.addOverlay(circle);
+
+    //  //地图加载完毕
+    //  map.addEventListener("tilesloaded", function () { alert("地图加载完毕"); });
+
+    //// 设置鼠标样式
+    //map.setDefaultCursor("url('bird.cur')");
+</script>
+</html>

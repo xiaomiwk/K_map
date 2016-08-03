@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{9E8DF6D3-05E4-4FE1-BB78-CC092218AE46}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>显示地图</RootNamespace>
+    <AssemblyName>显示地图</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\调试输出\地图\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>
+    </ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Enum.cs" />
+    <Compile Include="FDemo切换.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FDemo切换.Designer.cs">
+      <DependentUpon>FDemo切换.cs</DependentUpon>
+    </Compile>
+    <Compile Include="F地图.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="F地图.Designer.cs">
+      <DependentUpon>F地图.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HGPS坐标转换.cs" />
+    <Compile Include="H信息查询.cs" />
+    <Compile Include="H图标.cs" />
+    <Compile Include="H地图算法.cs" />
+    <Compile Include="H行政区位置.cs" />
+    <Compile Include="IF地图.cs" />
+    <Compile Include="M区域绘制参数.cs" />
+    <Compile Include="M地址.cs" />
+    <Compile Include="M点绘制参数.cs" />
+    <Compile Include="M行政区位置.cs" />
+    <Compile Include="M线路.cs" />
+    <Compile Include="M经纬度.cs" />
+    <Compile Include="FDemo缩放.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FDemo缩放.Designer.cs">
+      <DependentUpon>FDemo缩放.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FDemo切换.resx">
+      <DependentUpon>FDemo切换.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="F地图.resx">
+      <DependentUpon>F地图.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FDemo缩放.resx">
+      <DependentUpon>FDemo缩放.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GMap.NET.Core\GMap.NET.Core.csproj">
+      <Project>{d0c39d9d-bed0-418b-9a5e-713176caf40c}</Project>
+      <Name>GMap.NET.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GMap.NET.WindowsForms\GMap.NET.WindowsForms.csproj">
+      <Project>{e06def77-f933-42fb-afd7-db2d0d8d6a98}</Project>
+      <Name>GMap.NET.WindowsForms</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

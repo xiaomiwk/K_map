@@ -1,0 +1,623 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Security.Cryptography;
+using GMap.NET.publics;
+using GMap.NET.Projections;
+using System.Text;
+
+namespace GMap.NET.MapProviders
+{
+
+    /// <summary>
+    /// providers that are already build in
+    /// </summary>
+    public class GMapProviders
+    {
+        static GMapProviders()
+        {
+            list = new List<GMapProvider>();
+
+            Type type = typeof(GMapProviders);
+            foreach (var p in type.GetFields())
+            {
+                var v = p.GetValue(null) as GMapProvider; // static classes cannot be instanced, so use null...
+                if (v != null)
+                {
+                    list.Add(v);
+                }
+            }
+
+            Hash = new Dictionary<Guid, GMapProvider>();
+            foreach (var p in list)
+            {
+                Hash.Add(p.Id, p);
+            }
+
+            DbHash = new Dictionary<int, GMapProvider>();
+            foreach (var p in list)
+            {
+                DbHash.Add(p.DbId, p);
+            }
+        }
+
+        GMapProviders()
+        {
+        }
+
+        public static readonly EmptyProvider EmptyProvider = EmptyProvider.Instance;
+
+        //public static readonly OpenStreetMapProvider OpenStreetMap = OpenStreetMapProvider.Instance;
+
+        //public static readonly OpenStreet4UMapProvider OpenStreet4UMap = OpenStreet4UMapProvider.Instance;
+
+        //public static readonly OpenCycleMapProvider OpenCycleMap = OpenCycleMapProvider.Instance;
+        //public static readonly OpenCycleLandscapeMapProvider OpenCycleLandscapeMap = OpenCycleLandscapeMapProvider.Instance;
+        //public static readonly OpenCycleTransportMapProvider OpenCycleTransportMap = OpenCycleTransportMapProvider.Instance;
+
+        //public static readonly OpenStreetMapQuestProvider OpenStreetMapQuest = OpenStreetMapQuestProvider.Instance;
+        //public static readonly OpenStreetMapQuestSatteliteProvider OpenStreetMapQuestSattelite = OpenStreetMapQuestSatteliteProvider.Instance;
+        //public static readonly OpenStreetMapQuestHybridProvider OpenStreetMapQuestHybrid = OpenStreetMapQuestHybridProvider.Instance;
+
+        //public static readonly OpenSeaMapHybridProvider OpenSeaMapHybrid = OpenSeaMapHybridProvider.Instance;
+
+        //public static readonly BingMapProvider BingMap = BingMapProvider.Instance;
+        //public static readonly BingSatelliteMapProvider BingSatelliteMap = BingSatelliteMapProvider.Instance;
+        //public static readonly BingHybridMapProvider BingHybridMap = BingHybridMapProvider.Instance;
+
+        public static readonly GoogleMapProvider GoogleMap = GoogleMapProvider.Instance;
+        public static readonly GoogleSatelliteMapProvider GoogleSatelliteMap = GoogleSatelliteMapProvider.Instance;
+        public static readonly GoogleHybridMapProvider GoogleHybridMap = GoogleHybridMapProvider.Instance;
+        public static readonly GoogleTerrainMapProvider GoogleTerrainMap = GoogleTerrainMapProvider.Instance;
+        public static readonly GoogleChinaMapProvider GoogleChinaMap = GoogleChinaMapProvider.Instance;
+        public static readonly GoogleChinaSatelliteMapProvider GoogleChinaSatelliteMap = GoogleChinaSatelliteMapProvider.Instance;
+        public static readonly GoogleChinaHybridMapProvider GoogleChinaHybridMap = GoogleChinaHybridMapProvider.Instance;
+        public static readonly GoogleChinaTerrainMapProvider GoogleChinaTerrainMap = GoogleChinaTerrainMapProvider.Instance;
+
+
+        public static readonly BaiduMapProvider BaiduMap = BaiduMapProvider.Instance;
+        public static readonly BaiduSateliteMapProvider BaiduSateliteMap = BaiduSateliteMapProvider.Instance;
+
+        //public static readonly BaiduMapProvider1 BaiduMap1 = BaiduMapProvider1.Instance;
+
+        //public static readonly SogouMapProvider SogouMap = SogouMapProvider.Instance;
+        //public static readonly SogouSateliteMapProvider SogouSateliteMap = SogouSateliteMapProvider.Instance;
+
+        //public static readonly SosoMapProvider SosoMap = SosoMapProvider.Instance;
+        //public static readonly SosoMapSateliteProvider SosoMapSatelite = SosoMapSateliteProvider.Instance;
+
+        public static readonly AMapProvider AMap = AMapProvider.Instance;
+        public static readonly AMapSateliteProvider AMapSatelite = AMapSateliteProvider.Instance;
+
+        public static readonly PGISMapProvider PGISMap = PGISMapProvider.Instance;
+
+        static List<GMapProvider> list;
+
+        /// <summary>
+        /// get all instances of the supported providers
+        /// </summary>
+        public static List<GMapProvider> List
+        {
+            get
+            {
+                return list;
+            }
+        }
+
+        static Dictionary<Guid, GMapProvider> Hash;
+
+        public static GMapProvider TryGetProvider(Guid id)
+        {
+            GMapProvider ret;
+            if (Hash.TryGetValue(id, out ret))
+            {
+                return ret;
+            }
+            return null;
+        }
+
+        static Dictionary<int, GMapProvider> DbHash;
+
+        public static GMapProvider TryGetProvider(int DbId)
+        {
+            GMapProvider ret;
+            if (DbHash.TryGetValue(DbId, out ret))
+            {
+                return ret;
+            }
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// base class for each map provider
+    /// </summary>
+    public abstract class GMapProvider
+    {
+        /// <summary>
+        /// unique provider id
+        /// </summary>
+        public abstract Guid Id
+        {
+            get;
+        }
+
+        /// <summary>
+        /// provider name
+        /// </summary>
+        public abstract string Name
+        {
+            get;
+        }
+
+        /// <summary>
+        /// provider projection
+        /// </summary>
+        public abstract PureProjection Projection
+        {
+            get;
+        }
+
+        /// <summary>
+        /// provider overlays
+        /// </summary>
+        public abstract GMapProvider[] Overlays
+        {
+            get;
+        }
+
+        /// <summary>
+        /// gets tile image using implmented provider
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="zoom"></param>
+        /// <returns></returns>
+        public abstract PureImage GetTileImage(GPoint pos, int zoom);
+
+        static readonly List<GMapProvider> MapProviders = new List<GMapProvider>();
+        static readonly SHA1CryptoServiceProvider HashProvider = new SHA1CryptoServiceProvider();
+
+        protected GMapProvider()
+        {
+            DbId = Math.Abs(BitConverter.ToInt32(HashProvider.ComputeHash(Id.ToByteArray()), 0));
+
+            if (MapProviders.Exists(p => p.Id == Id || p.DbId == DbId))
+            {
+                throw new Exception("such provider id already exsists, try regenerate your provider guid...");
+            }
+            MapProviders.Add(this);
+        }
+
+        static GMapProvider()
+        {
+            WebProxy = EmptyWebProxy.Instance;
+        }
+
+        bool isInitialized = false;
+
+        /// <summary>
+        /// was provider initialized
+        /// </summary>
+        public bool IsInitialized
+        {
+            get
+            {
+                return isInitialized;
+            }
+            internal set
+            {
+                isInitialized = value;
+            }
+        }
+
+        /// <summary>
+        /// called before first use
+        /// </summary>
+        public virtual void OnInitialized()
+        {
+            // nice place to detect current provider version
+        }
+
+        /// <summary>
+        /// id for database, a hash of provider guid
+        /// </summary>
+        public readonly int DbId;
+
+        /// <summary>
+        /// area of map
+        /// </summary>
+        public RectLatLng? Area;
+
+        /// <summary>
+        /// minimum level of zoom
+        /// </summary>
+        public int MinZoom;
+
+        /// <summary>
+        /// maximum level of zoom
+        /// </summary>
+        public int? MaxZoom = 17;
+
+        /// <summary>
+        /// proxy for net access
+        /// </summary>
+        public static IWebProxy WebProxy;
+
+        /// <summary>
+        /// Connect trough a SOCKS 4/5 proxy server
+        /// </summary>
+        public static bool IsSocksProxy = false;
+
+        /// <summary>
+        /// NetworkCredential for tile http access
+        /// </summary>
+        public static ICredentials Credential;
+
+        /// <summary>
+        /// Gets or sets the value of the User-agent HTTP header.
+        /// It's pseudo-randomized to avoid blockages...
+        /// </summary>                  
+        public static string UserAgent = string.Format("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:{0}.0) Gecko/{2}{3:00}{4:00} Firefox/{0}.0.{1}", Stuff.random.Next(3, 14), Stuff.random.Next(1, 10), Stuff.random.Next(DateTime.Today.Year - 4, DateTime.Today.Year), Stuff.random.Next(12), Stuff.random.Next(30));
+
+        /// <summary>
+        /// timeout for provider connections
+        /// </summary>
+        public static int TimeoutMs = 5 * 1000;
+        /// <summary>
+        /// Gets or sets the value of the Referer HTTP header.
+        /// </summary>
+        public string RefererUrl = string.Empty;
+
+        public string Copyright = string.Empty;
+
+        /// <summary>
+        /// true if tile origin at BottomLeft, WMS-C
+        /// </summary>
+        public bool InvertedAxisY = false;
+
+        //static string languageStr = "en";
+        static string languageStr = "en";
+        public static string LanguageStr
+        {
+            get
+            {
+                return languageStr;
+            }
+        }
+        static LanguageType language = LanguageType.English;
+
+        /// <summary>
+        /// map language
+        /// </summary>
+        public static LanguageType Language
+        {
+            get
+            {
+                return language;
+            }
+            set
+            {
+                language = value;
+                languageStr = Stuff.EnumToString(Language);
+            }
+        }
+
+        /// <summary>
+        /// to bypass the cache, set to true
+        /// </summary>
+        public bool BypassCache = false;
+
+        /// <summary>
+        /// public proxy for image managment
+        /// </summary>
+        public static PureImageProxy TileImageProxy;
+
+        static readonly string requestAccept = "*/*";
+        static readonly string responseContentType = "image";
+
+        protected virtual bool CheckTileImageHttpResponse(WebResponse response)
+        {
+            //Debug.WriteLine(response.StatusCode + "/" + response.StatusDescription + "/" + response.ContentType + " -> " + response.ResponseUri);
+            return response.ContentType.Contains(responseContentType);
+        }
+
+        protected PureImage GetTileImageUsingHttp(string url)
+        {
+            PureImage ret = null;
+
+            WebRequest request = IsSocksProxy ? SocksHttpWebRequest.Create(url) : WebRequest.Create(url);
+            if (WebProxy != null)
+            {
+                request.Proxy = WebProxy;
+            }
+
+            if (Credential != null)
+            {
+                request.PreAuthenticate = true;
+                request.Credentials = Credential;
+            }
+
+            if (request is HttpWebRequest)
+            {
+                var r = request as HttpWebRequest;
+                r.UserAgent = UserAgent;
+                r.ReadWriteTimeout = TimeoutMs * 6;
+                r.Accept = requestAccept;
+                r.Referer = RefererUrl;
+                r.Timeout = TimeoutMs;
+            }
+            else if (request is SocksHttpWebRequest)
+            {
+                var r = request as SocksHttpWebRequest;
+
+                if (!string.IsNullOrEmpty(UserAgent))
+                {
+                    r.Headers.Add("User-Agent", UserAgent);
+                }
+
+                if (!string.IsNullOrEmpty(requestAccept))
+                {
+                    r.Headers.Add("Accept", requestAccept);
+                }
+
+                if (!string.IsNullOrEmpty(RefererUrl))
+                {
+                    r.Headers.Add("Referer", RefererUrl);
+                }
+            }
+            using (var response = request.GetResponse())
+            {
+                if (CheckTileImageHttpResponse(response))
+                {
+                    using (Stream responseStream = response.GetResponseStream())
+                    {
+                        MemoryStream data = Stuff.CopyStream(responseStream, false);
+
+                        Debug.WriteLine("Response[" + data.Length + " bytes]: " + url);
+
+                        if (data.Length > 0)
+                        {
+                            ret = TileImageProxy.FromStream(data);
+
+                            if (ret != null)
+                            {
+                                ret.Data = data;
+                                ret.Data.Position = 0;
+                            }
+                            else
+                            {
+                                data.Dispose();
+                            }
+                        }
+                        data = null;
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("CheckTileImageHttpResponse[false]: " + url);
+                }
+                response.Close();
+            }
+            return ret;
+        }
+
+        protected string GetContentUsingHttp(string url)
+        {
+            string ret = string.Empty;
+
+            WebRequest request = IsSocksProxy ? SocksHttpWebRequest.Create(url) : WebRequest.Create(url);
+
+            if (WebProxy != null)
+            {
+                request.Proxy = WebProxy;
+            }
+
+            if (Credential != null)
+            {
+                request.PreAuthenticate = true;
+                request.Credentials = Credential;
+            }
+
+            if (request is HttpWebRequest)
+            {
+                var r = request as HttpWebRequest;
+                r.UserAgent = UserAgent;
+                r.ReadWriteTimeout = TimeoutMs * 6;
+                r.Accept = requestAccept;
+                r.Referer = RefererUrl;
+                r.Timeout = TimeoutMs;
+            }
+            else if (request is SocksHttpWebRequest)
+            {
+                var r = request as SocksHttpWebRequest;
+
+                if (!string.IsNullOrEmpty(UserAgent))
+                {
+                    r.Headers.Add("User-Agent", UserAgent);
+                }
+
+                if (!string.IsNullOrEmpty(requestAccept))
+                {
+                    r.Headers.Add("Accept", requestAccept);
+                }
+
+                if (!string.IsNullOrEmpty(RefererUrl))
+                {
+                    r.Headers.Add("Referer", RefererUrl);
+                }
+            }
+            using (var response = request.GetResponse())
+            {
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    using (StreamReader read = new StreamReader(responseStream, Encoding.UTF8))
+                    {
+                        ret = read.ReadToEnd();
+                    }
+                }
+                response.Close();
+            }
+
+            return ret;
+        }
+
+        protected static int GetServerNum(GPoint pos, int max)
+        {
+            return (int)(pos.X + 2 * pos.Y) % max;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)DbId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is GMapProvider)
+            {
+                return Id.Equals((obj as GMapProvider).Id);
+            }
+            return false;
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        #region -- encryption --
+        static string EncryptString(string Message, string Passphrase)
+        {
+            byte[] Results;
+            System.Text.UTF8Encoding UTF8 = new System.Text.UTF8Encoding();
+
+            // Step 1. We hash the passphrase using MD5
+            // We use the MD5 hash generator as the result is a 128 bit byte array
+            // which is a valid length for the TripleDES encoder we use below
+
+            using (MD5CryptoServiceProvider HashProvider = new MD5CryptoServiceProvider())
+            {
+                byte[] TDESKey = HashProvider.ComputeHash(UTF8.GetBytes(Passphrase));
+
+                // Step 2. Create a new TripleDESCryptoServiceProvider object
+                using (TripleDESCryptoServiceProvider TDESAlgorithm = new TripleDESCryptoServiceProvider())
+                {
+                    // Step 3. Setup the encoder
+                    TDESAlgorithm.Key = TDESKey;
+                    TDESAlgorithm.Mode = CipherMode.ECB;
+                    TDESAlgorithm.Padding = PaddingMode.PKCS7;
+
+                    // Step 4. Convert the input string to a byte[]
+                    byte[] DataToEncrypt = UTF8.GetBytes(Message);
+
+                    // Step 5. Attempt to encrypt the string
+                    try
+                    {
+                        using (ICryptoTransform Encryptor = TDESAlgorithm.CreateEncryptor())
+                        {
+                            Results = Encryptor.TransformFinalBlock(DataToEncrypt, 0, DataToEncrypt.Length);
+                        }
+                    }
+                    finally
+                    {
+                        // Clear the TripleDes and Hashprovider services of any sensitive information
+                        TDESAlgorithm.Clear();
+                        HashProvider.Clear();
+                    }
+                }
+            }
+
+            // Step 6. Return the encrypted string as a base64 encoded string
+            return Convert.ToBase64String(Results);
+        }
+
+        static string DecryptString(string Message, string Passphrase)
+        {
+            byte[] Results;
+            System.Text.UTF8Encoding UTF8 = new System.Text.UTF8Encoding();
+
+            // Step 1. We hash the passphrase using MD5
+            // We use the MD5 hash generator as the result is a 128 bit byte array
+            // which is a valid length for the TripleDES encoder we use below
+
+            using (MD5CryptoServiceProvider HashProvider = new MD5CryptoServiceProvider())
+            {
+                byte[] TDESKey = HashProvider.ComputeHash(UTF8.GetBytes(Passphrase));
+
+                // Step 2. Create a new TripleDESCryptoServiceProvider object
+                using (TripleDESCryptoServiceProvider TDESAlgorithm = new TripleDESCryptoServiceProvider())
+                {
+                    // Step 3. Setup the decoder
+                    TDESAlgorithm.Key = TDESKey;
+                    TDESAlgorithm.Mode = CipherMode.ECB;
+                    TDESAlgorithm.Padding = PaddingMode.PKCS7;
+
+                    // Step 4. Convert the input string to a byte[]
+                    byte[] DataToDecrypt = Convert.FromBase64String(Message);
+
+                    // Step 5. Attempt to decrypt the string
+                    try
+                    {
+                        using (ICryptoTransform Decryptor = TDESAlgorithm.CreateDecryptor())
+                        {
+                            Results = Decryptor.TransformFinalBlock(DataToDecrypt, 0, DataToDecrypt.Length);
+                        }
+                    }
+                    finally
+                    {
+                        // Clear the TripleDes and Hashprovider services of any sensitive information
+                        TDESAlgorithm.Clear();
+                        HashProvider.Clear();
+                    }
+                }
+            }
+
+            // Step 6. Return the decrypted string in UTF8 format
+            return UTF8.GetString(Results, 0, Results.Length);
+        }
+
+        public static string EncryptString(string Message)
+        {
+            return EncryptString(Message, manifesto);
+        }
+
+        public static string GString(string Message)
+        {
+            return DecryptString(Message, manifesto);
+        }
+
+        static readonly string manifesto = "GMap.NET is great and Powerful, Free, cross platform, open source .NET control.";
+        #endregion
+    }
+
+
+    public sealed class EmptyWebProxy : IWebProxy
+    {
+        public static readonly EmptyWebProxy Instance = new EmptyWebProxy();
+
+        private ICredentials m_credentials;
+        public ICredentials Credentials
+        {
+            get
+            {
+                return this.m_credentials;
+            }
+            set
+            {
+                this.m_credentials = value;
+            }
+        }
+
+        public Uri GetProxy(Uri uri)
+        {
+            return uri;
+        }
+
+        public bool IsBypassed(Uri uri)
+        {
+            return true;
+        }
+    }
+}

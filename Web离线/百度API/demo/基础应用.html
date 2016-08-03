@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+        
+        #allmap {
+            width: 100%;
+            height: 500px;
+        }
+        
+        #r-result {
+            width: 100%;
+            margin-top: 5px;
+        }
+        
+        p {
+            margin: 5px;
+            font-size: 14px;
+        }
+    </style>
+    <script type="text/javascript" src="../baidujs/baidu.js"></script>
+    <script type="text/javascript" src="../baidujs/modules.js"></script>
+    <script type="text/javascript" src="../baidujs/TextIconOverlay.js"></script>
+    <script type="text/javascript" src="../baidujs/MarkerClusterer.js"></script>
+    <title>基础应用</title>
+</head>
+
+<body>
+    <div id="allmap"></div>
+    <div id="r-result">
+        <input type="button" onclick="添加覆盖物();" value="添加覆盖物" />
+        <input type="button" onclick="清除覆盖物();" value="清除覆盖物" />
+        <input type="button" onclick="覆盖物高级用法();" value="覆盖物高级用法" />
+        <input type="button" onclick="绘制海量点();" value="绘制海量点" />       
+        <input type="button" onclick="绘制海量点_聚集();" value="绘制海量点-聚集" />
+    </div>
+    <p>在地图的左上、右上分别展示完整、缩略样式的缩放平移控件；同时在地图的左上方展示比例尺控件，点击按钮查看效果</p>
+</body>
+
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("allmap", {
+        minZoom: 10,
+        maxZoom: 16,
+        enableMapClick: false, //关闭底图可点功能
+    }); // 创建Map实例,设置地图允许的最小/大级别
+    map.enableScrollWheelZoom(); //启用滚轮放大缩小，默认禁用
+    //map.enableContinuousZoom();    //启用地图惯性拖拽，默认禁用
+    添加比例尺();
+    添加缩放控制();
+    添加缩略图();
+    添加地图类型();
+    设置地图中心(116.404, 39.915, 13);
+    map.addEventListener("tilesloaded", function () {
+        //alert("地图加载完毕");
+    });
+    //map.addEventListener("click", showInfo);
+
+    function 设置地图中心(经度, 纬度, 层级) {
+        map.centerAndZoom(new BMap.Point(经度, 纬度), 层级);
+    }
+
+    function 添加比例尺() {
+        var top_left_control = new BMap.ScaleControl({
+            anchor: BMAP_ANCHOR_TOP_LEFT
+        }); // 左上角，添加比例尺
+        map.addControl(top_left_control);
+        //map.removeControl(top_left_control);
+    }
+
+    function 添加缩放控制() {
+        var top_left_navigation = new BMap.NavigationControl(); //左上角，添加默认缩放平移控件
+        //var top_right_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_TOP_RIGHT, type: BMAP_NAVIGATION_CONTROL_SMALL}); //右上角，仅包含平移和缩放按钮
+        /*缩放控件type有四种类型:BMAP_NAVIGATION_CONTROL_SMALL：仅包含平移和缩放按钮；BMAP_NAVIGATION_CONTROL_PAN:仅包含平移按钮；BMAP_NAVIGATION_CONTROL_ZOOM：仅包含缩放按钮*/
+        map.addControl(top_left_navigation);
+        //map.removeControl(top_left_navigation);
+    }
+
+    function 添加缩略图() {
+        var overView = new BMap.OverviewMapControl();
+        var overViewOpen = new BMap.OverviewMapControl({
+            isOpen: true,
+            anchor: BMAP_ANCHOR_BOTTOM_RIGHT
+        });
+        map.addControl(overView); //添加默认缩略地图控件
+        map.addControl(overViewOpen); //右下角，打开
+        //map.removeControl(overView);
+        //map.removeControl(overViewOpen);
+    }
+
+    function 添加地图类型() {
+        var mapType1 = new BMap.MapTypeControl({
+            mapTypes: [BMAP_NORMAL_MAP, BMAP_HYBRID_MAP]
+        });
+        map.addControl(mapType1); //2D图，卫星图
+        //map.removeControl(mapType1); //移除2D图，卫星图
+    }
+
+    function 移动地图(经度, 纬度) {
+        map.panTo(new BMap.Point(经度, 纬度)); //两秒后移动到广州
+    }
+
+    function 缩放地图(层级) {
+        map.setZoom(层级);
+    }
+
+    function 设置地图显示范围() {
+        //<script type="text/javascript" src="js/AreaRestriction.js"/>
+        var b = new BMap.Bounds(new BMap.Point(116.027143, 39.772348), new BMap.Point(116.832025, 40.126349));
+        try {
+            BMapLib.AreaRestriction.setBounds(map, b);
+        } catch (e) {
+            alert(e);
+        }
+
+        //让所有点在视野范围内
+        //map.setViewport([new BMap.Point(118.444, 39.955), new BMap.Point(117.444, 39.905), new BMap.Point(116.444, 39.905)]); //让所有点在视野范围内
+    }
+
+    function 获取地图显示范围() {
+        var bs = map.getBounds(); //获取可视区域
+        var bssw = bs.getSouthWest(); //可视区域左下角
+        var bsne = bs.getNorthEast(); //可视区域右上角
+        alert("当前地图可视范围是：" + bssw.lng + "," + bssw.lat + "到" + bsne.lng + "," + bsne.lat);
+    }
+
+    function 添加覆盖物() {
+        var marker = new BMap.Marker(new BMap.Point(116.404, 39.915)); // 创建点
+        var polyline = new BMap.Polyline([
+          new BMap.Point(116.399, 39.910),
+          new BMap.Point(116.405, 39.920),
+          new BMap.Point(116.425, 39.900)
+         ], {
+            strokeColor: "blue",
+            strokeWeight: 2,
+            strokeOpacity: 0.5
+        }); //创建折线
+
+        var circle = new BMap.Circle(new BMap.Point(116.404, 39.915), 500, {
+            strokeColor: "blue",
+            strokeWeight: 2,
+            strokeOpacity: 0.5
+        }); //创建圆
+
+        var polygon = new BMap.Polygon([
+          new BMap.Point(116.387112, 39.920977),
+          new BMap.Point(116.385243, 39.913063),
+          new BMap.Point(116.394226, 39.917988),
+          new BMap.Point(116.401772, 39.921364),
+          new BMap.Point(116.41248, 39.927893)
+         ], {
+            strokeColor: "blue",
+            strokeWeight: 2,
+            strokeOpacity: 0.5
+        }); //创建多边形
+
+        var pStart = new BMap.Point(116.392214, 39.918985);
+        var pEnd = new BMap.Point(116.41478, 39.911901);
+        var rectangle = new BMap.Polygon([
+          new BMap.Point(pStart.lng, pStart.lat),
+          new BMap.Point(pEnd.lng, pStart.lat),
+          new BMap.Point(pEnd.lng, pEnd.lat),
+          new BMap.Point(pStart.lng, pEnd.lat)
+         ], {
+            strokeColor: "blue",
+            strokeWeight: 2,
+            strokeOpacity: 0.5
+        }); //创建矩形
+
+        map.addOverlay(marker); //增加点
+        map.addOverlay(polyline); //增加折线
+        map.addOverlay(circle); //增加圆
+        map.addOverlay(polygon); //增加多边形
+        map.addOverlay(rectangle); //增加矩形
+
+        marker.hide();
+        polyline.hide();
+        circle.hide();
+        marker.show();
+        polyline.show();
+        circle.show();
+
+
+        var opts = {
+            position: new BMap.Point(116.424, 39.935), // 指定文本标注所在的地理位置
+            offset: new BMap.Size(30, -30) //设置文本偏移量
+        }
+        var label = new BMap.Label("欢迎使用百度地图，这是一个简单的文本标注哦~", opts); // 创建文本标注对象
+        label.setStyle({
+            color: "red",
+            fontSize: "12px",
+            height: "20px",
+            lineHeight: "20px",
+            fontFamily: "微软雅黑"
+        });
+        map.addOverlay(label);
+
+        var label = new BMap.Label("我是文字标注哦", {
+            offset: new BMap.Size(20, -10)
+        });
+        marker.setLabel(label);
+    }
+
+    function 清除覆盖物() {
+        //        //遍历与单个删除
+        //        var allOverlay = map.getOverlays();
+        //        for (var i = 0; i < allOverlay.length - 1; i++) {
+        //            if (allOverlay[i].getLabel().content == "我是id=1") {
+        //                map.removeOverlay(allOverlay[i]);
+        //                return false;
+        //            }
+        //        }
+        map.clearOverlays();
+    }
+
+    function 覆盖物高级用法() {
+        //跳动的动画
+        var marker1 = new BMap.Marker(new BMap.Point(116.444, 39.955));
+        map.addOverlay(marker1);
+        marker1.setAnimation(BMAP_ANIMATION_BOUNCE);
+
+        //gif动画, 拖动, 自定义事件, 弹出自定义窗口
+        var pt = new BMap.Point(116.417, 39.909);
+        var myIcon = new BMap.Icon("../baiduimages/fox.gif", new BMap.Size(300, 157));
+        var marker2 = new BMap.Marker(pt, {
+            icon: myIcon
+        });
+        map.addOverlay(marker2);
+        marker2.enableDragging(); //marker.disableDragging(); //
+        marker2.addEventListener("click", function (e) {
+            var p = e.target;
+            if (p instanceof BMap.Marker) {
+                alert("该覆盖物是点，点的坐标是：" + p.getPosition().lng + "," + p.getPosition().lat);
+            } else if (p instanceof BMap.Circle) {
+                alert("该覆盖物是圆，圆的半径是：" + p.getRadius() + "，圆的中心点坐标是：" + p.getCenter().lng + "," + p.getCenter().lat);
+            } else if (p instanceof BMap.Polyline) {
+                alert("该覆盖物是折线，所画点的个数是：" + p.getPath().length);
+            } else {
+                alert("无法获知该覆盖物类型");
+            }
+        });
+
+        //弹出窗口
+        var marker3 = new BMap.Marker(new BMap.Point(116.444, 39.905));
+        map.addOverlay(marker3);
+        var sContent =
+            "<h4 style='margin:0 0 5px 0;padding:0.2em 0'>天安门</h4>" +
+            "<img style='float:right;margin:4px' id='imgDemo' src='../baiduimages/copyright_logo.png' width='139' height='104' title='天安门'/>" +
+            "<p style='margin:0;line-height:1.5;font-size:13px;text-indent:2em'>天安门坐落在中国北京市中心,故宫的南侧,与天安门广场隔长安街相望,是清朝皇城的大门...</p>" +
+            "</div>";
+        var infoWindow = new BMap.InfoWindow(sContent); // 创建信息窗口对象
+        marker3.addEventListener("click", function () {
+            this.openInfoWindow(infoWindow);
+            //图片加载完毕重绘infowindow
+            document.getElementById('imgDemo').onload = function () {
+                infoWindow.redraw(); //防止在网速较慢，图片未加载时，生成的信息框高度比图片的总高度小，导致图片部分被隐藏
+            }
+        });
+
+        //开启线、 面编辑功能
+        var polyline = new BMap.Polyline([
+                  new BMap.Point(116.399, 39.910),
+                  new BMap.Point(116.405, 39.920),
+                  new BMap.Point(116.425, 39.900)
+                 ], {
+            strokeColor: "blue",
+            strokeWeight: 2,
+            strokeOpacity: 0.5
+        });
+        map.addOverlay(polyline);
+        polyline.enableEditing(); //polyline.enableEditing(); epolygon.enableEditing();开启线、 面编辑功能//polyline.disableEditing();polygon.disableEditing()关闭线、 面编辑功能
+    }
+
+    function 绘制海量点() {
+        if (document.createElement('canvas').getContext) { // 判断当前浏览器是否支持绘制海量点                  
+            var points = []; // 添加海量点数据
+            for (var i = 0; i < 100; i++) {
+                for (var j = 0; j < 100; j++) {
+                    var pt = new BMap.Point(116 + Math.random() * i * 0.01, 39 + Math.random() * j * 0.01);
+                    points.push(pt);
+                }
+            }
+            var options = {
+                size: BMAP_POINT_SIZE_SMALL,
+                shape: BMAP_POINT_SHAPE_STAR,
+                color: '#d340c3'
+            }
+            var pointCollection = new BMap.PointCollection(points, options); // 初始化PointCollection
+            pointCollection.addEventListener('click', function (e) {
+                alert('单击点的坐标为：' + e.point.lng + ',' + e.point.lat); // 监听点击事件
+            });
+            map.addOverlay(pointCollection); // 添加Overlay
+        } else {
+            alert('请在chrome、safari、IE8+以上浏览器查看本示例');
+        }
+    }
+
+    function 绘制海量点_聚集() {
+        if (document.createElement('canvas').getContext) { // 判断当前浏览器是否支持绘制海量点                  
+            var markers = [];
+            for (var i = 0; i < 100; i++) {
+                for (var j = 0; j < 100; j++) {
+                    var pt = new BMap.Point(116 + Math.random() * i * 0.01, 39 + Math.random() * j * 0.01);
+                    markers.push(new BMap.Marker(pt));
+                }
+            }
+            //最简单的用法，生成一个marker数组，然后调用markerClusterer类即可。
+            var markerClusterer = new BMapLib.MarkerClusterer(map, {
+                markers: markers
+            });
+
+        } else {
+            alert('请在chrome、safari、IE8+以上浏览器查看本示例');
+        }
+    }
+
+    function 获取两点间距离() {
+        var pointA = new BMap.Point(106.486654, 29.490295); // 创建点坐标A--大渡口区
+        var pointB = new BMap.Point(106.581515, 29.615467); // 创建点坐标B--江北区
+        alert('从大渡口区到江北区的距离是：' + (map.getDistance(pointA, pointB)).toFixed(2) + ' 米。'); //获取两点距离,保留小数点后两位
+        var polyline = new BMap.Polyline([pointA, pointB], {
+            strokeColor: "blue",
+            strokeWeight: 6,
+            strokeOpacity: 0.5
+        }); //定义折线
+        map.addOverlay(polyline); //添加折线到地图上
+    }
+</script>

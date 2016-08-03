@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8D7BD5ED-33A1-4A06-A03E-957DA1C1E49A}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>显示地图_逻辑图</RootNamespace>
+    <AssemblyName>显示地图_逻辑图</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\调试输出\地图\显示地图_逻辑图\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>K.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="F主界面.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="F主界面.Designer.cs">
+      <DependentUpon>F主界面.cs</DependentUpon>
+    </Compile>
+    <Compile Include="F空白地图.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="F空白地图.Designer.cs">
+      <DependentUpon>F空白地图.cs</DependentUpon>
+    </Compile>
+    <Compile Include="F逻辑图.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="F逻辑图.Designer.cs">
+      <DependentUpon>F逻辑图.cs</DependentUpon>
+    </Compile>
+    <Compile Include="F逻辑图2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="F逻辑图2.Designer.cs">
+      <DependentUpon>F逻辑图2.cs</DependentUpon>
+    </Compile>
+    <Compile Include="H合成图片.cs" />
+    <Compile Include="M示例业务对象.cs" />
+    <Compile Include="F提示.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="F提示.Designer.cs">
+      <DependentUpon>F提示.cs</DependentUpon>
+    </Compile>
+    <Compile Include="F拓扑图.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IF拓扑图.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UC窗体脚.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UC窗体脚.Designer.cs">
+      <DependentUpon>UC窗体脚.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UC窗体头.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UC窗体头.Designer.cs">
+      <DependentUpon>UC窗体头.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="F主界面.resx">
+      <DependentUpon>F主界面.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="F空白地图.resx">
+      <DependentUpon>F空白地图.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="F逻辑图.resx">
+      <DependentUpon>F逻辑图.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="F逻辑图2.resx">
+      <DependentUpon>F逻辑图2.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="F提示.resx">
+      <DependentUpon>F提示.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="UC窗体脚.resx">
+      <DependentUpon>UC窗体脚.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UC窗体头.resx">
+      <DependentUpon>UC窗体头.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\默认大小1.png" />
+    <None Include="Resources\默认大小0.png" />
+    <None Include="Resources\最小化1.png" />
+    <None Include="Resources\最小化0.png" />
+    <None Include="Resources\最大化1.png" />
+    <None Include="Resources\最大化0.png" />
+    <None Include="Resources\关闭1.png" />
+    <None Include="Resources\关闭0.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\显示地图\显示地图.csproj">
+      <Project>{9e8df6d3-05e4-4fe1-bb78-cc092218ae46}</Project>
+      <Name>显示地图</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="K.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

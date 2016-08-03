@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+    <meta name="keywords" content="百度地图,百度地图API，百度地图自定义工具，百度地图所见即所得工具" />
+    <meta name="description" content="百度地图API自定义地图，帮助用户在可视化操作下生成百度地图" />
+    <title>百度地图API自定义地图</title>
+
+    <!--引用百度地图API-->
+    <style type="text/css">
+        body, html, #allmap {
+            width: 100%;
+            height: 100%;
+            /*overflow: hidden;*/
+            margin: 0;
+        }
+
+        /*#dituContent {
+            height: 100%;
+            width: 78%;
+            float: left;
+            border-right: 2px solid #bcbcbc;
+        }*/
+
+        #r-result {
+            height: 100%;
+            width: 20%;
+            float: left;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?key=&v=1.4"></script>
+    <script type="text/javascript" src="jquery-1.9.1.min.js"></script>
+</head>
+
+<body>
+    <!--百度地图容器--><!--style="border: #ccc solid 1px;"-->
+    <div id="dituContent"></div>
+    <div id="r-result"></div>
+    <input id="do触发事件" type="button" value="事件名称" style="display: none;" />
+    <input id="in事件参数" type="text" value="事件参数" style="display: none;" />
+
+</body>
+<script type="text/javascript">
+    //全局变量        
+
+    function 初始化地图(__城市) {
+        createMap(__城市);//创建地图
+        setMapEvent();//设置地图事件
+        addMapControl();//向地图添加控件
+    }
+
+    function 清除所有标记() {
+        map.clearOverlays();
+    }
+
+    function 设置地图大小(__宽, __高) {
+        document.getElementById("dituContent").style.width = __宽;
+        document.getElementById("dituContent").style.height = __高;
+    }
+
+    //创建地图函数：
+    function createMap(__城市) {
+        var map = new BMap.Map("dituContent");//在百度地图容器中创建一个地图
+        //var point = new BMap.Point(城市);//定义一个中心点坐标
+        map.centerAndZoom(__城市, 12);//设定地图的中心点和坐标并将地图显示在地图容器中
+        window.map = map;//将map变量存储在全局
+    }
+
+    //地图事件设置函数：
+    function setMapEvent() {
+        map.enableDragging();//启用地图拖拽事件，默认启用(可不写)
+        map.enableScrollWheelZoom();//启用地图滚轮放大缩小
+        map.enableDoubleClickZoom();//启用鼠标双击放大，默认启用(可不写)
+        map.enableKeyboard();//启用键盘上下左右键移动地图
+    }
+
+    //向地图添加控件：
+    function addMapControl() {
+        //向地图中添加缩放控件
+        var ctrl_nav = new BMap.NavigationControl({ anchor: BMAP_ANCHOR_TOP_LEFT, type: BMAP_NAVIGATION_CONTROL_LARGE });
+        map.addControl(ctrl_nav);
+        //向地图中添加缩略图控件
+        var ctrl_ove = new BMap.OverviewMapControl({ anchor: BMAP_ANCHOR_BOTTOM_RIGHT, isOpen: true });
+        map.addControl(ctrl_ove);
+        //向地图中添加比例尺控件
+        var ctrl_sca = new BMap.ScaleControl({ anchor: BMAP_ANCHOR_BOTTOM_LEFT });
+        map.addControl(ctrl_sca);
+    }
+
+    function 查询(__关键词) {
+        var options = {
+            onSearchComplete: function (results) {
+                // 判断状态是否正确   
+                if (local.getStatus() == BMAP_STATUS_SUCCESS) {
+                    var s = "[";
+                    for (var i = 0; i < results.getCurrentNumPois() ; i++) {
+                        //s.push(results.getPoi(i).title + ", " + results.getPoi(i).address);
+                        if (s != "[") {
+                            s = s + ",";
+                        }
+                        s = s + "{ \"Title\":\"" + results.getPoi(i).title + "\", \"Address\":\"" + results.getPoi(i).address + "\"}";
+                    }
+                    s = s + "]";
+                    执行客户端事件("返回页数", results.getNumPages());
+                    执行客户端事件("返回第一页", s);
+                } else {
+                    执行客户端事件("查询失败", "");
+                }
+            },
+            //renderOptions: { map: map, autoViewport: true, panel: "r-result", selectFirstResult: false }
+            renderOptions: { map: map, autoViewport: true, selectFirstResult: false }
+        };
+        var local = new BMap.LocalSearch(map, options);
+        local.search(__关键词);
+    }
+
+    function 执行客户端事件(__事件名称, __事件参数) {
+        document.getElementById("do触发事件").value = __事件名称;
+        document.getElementById("in事件参数").value = __事件参数;
+        document.getElementById("do触发事件").click();
+    }
+
+</script>
+</html>
